@@ -4,11 +4,13 @@ from gpiozero import Button
 from time import sleep
 
 class LCDMenuItem:
-    def __init__(self, text: str, values: tuple=None, callback=None):
+    def __init__(self, text: str, values: tuple=None, initValue=None, callback=None):
         self.text = text
         self.value = 0
         self.values = values
         self.callback = callback
+        if initValue != None:
+            self.value = initValue if values == None else values.index(initValue)
 
     def next(self):
         if self.values == None:
@@ -102,8 +104,8 @@ class LCDMenu:
         self.lcd.cursor_pos = (line,0)
 
     
-    def addItem(self, key, name, values: tuple=None, onChange=None):
-        self._items[key] = LCDMenuItem(text=name, values=values, callback=onChange)
+    def addItem(self, key, name, values: tuple=None, initValue=None, onChange=None):
+        self._items[key] = LCDMenuItem(text=name, values=values, initValue=initValue, callback=onChange)
         self._itemKeys.append(key)
         if self._selected == None:
             self._selected = 0

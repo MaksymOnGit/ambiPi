@@ -126,8 +126,8 @@ with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
         strip.setBrightness(int(value))
 
     menu = LCDMenu(lcd, up, down, left, right)
-    menu.addItem("brght", "Brightness", range(0,255), onChange=changeBrightness)
-    menu.addItem("clr", "Colors", ("Red", "Green", "Blue", "Black", "White", "Grey", "Yellow", "Pink"))
+    menu.addItem("brght", "Brightness", range(0,255), onChange=changeBrightness, initValue=100)
+    menu.addItem("clr", "Colors", ("Red", "Green", "Blue", "Black", "White", "Grey", "Yellow", "Pink"), initValue="Black")
     menu.addItem("ne", "First non exist", ("First", "Second", "Third", "Fourth"))
     menu.addItem("ne", "First non exist", ("First", "Second", "Third", "Fourth"))
 
