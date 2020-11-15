@@ -10,6 +10,8 @@ from RPi import GPIO
 from gpiozero import Button
 from LCDMenu import LCDMenu
 
+from AmbiPiDB import AmbiPiDB
+
 from rpi_ws281x import Adafruit_NeoPixel, Color
 
 # LED strip configuration:
@@ -112,8 +114,9 @@ class FrameProcessor(PiRGBAnalysis):
 
 
 with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
-    strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
-    strip.begin()
+    def changeBrightness(value):
+        db.setSettings("brght", int(value))
+        strip.setBrightness(int(value))
 
     lcd = CharLCD(pin_rs=22, pin_rw=None, pin_e=27, pins_data=[6,13,19,26], numbering_mode=GPIO.BCM, cols=16, rows=2)
 
@@ -122,14 +125,14 @@ with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
     left = Button(20)
     right = Button(21)
 
-    def changeBrightness(value):
-        strip.setBrightness(int(value))
+    db = AmbiPiDB()
 
+    brght = db.getSettings("brght")
     menu = LCDMenu(lcd, up, down, left, right)
-    menu.addItem("brght", "Brightness", range(0,255), onChange=changeBrightness, initValue=100)
-    menu.addItem("clr", "Colors", ("Red", "Green", "Blue", "Black", "White", "Grey", "Yellow", "Pink"), initValue="Black")
-    menu.addItem("ne", "First non exist", ("First", "Second", "Third", "Fourth"))
-    menu.addItem("ne", "First non exist", ("First", "Second", "Third", "Fourth"))
+    menu.addItem("brght", "Brightness", range(0,255), onChange=changeBrightness, initValue=brght)
+
+    strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, (LED_BRIGHTNESS if brght == None else brght), LED_CHANNEL)
+    strip.begin()
 
     camera.start_recording(FrameProcessor(camera, PROC_RES, strip), format='rgb', resize=PROC_RES)
     pause()

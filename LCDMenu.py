@@ -6,10 +6,9 @@ from time import sleep
 class LCDMenuItem:
     def __init__(self, text: str, values: tuple=None, initValue=None, callback=None):
         self.text = text
-        self.value = 0
         self.values = values
         self.callback = callback
-        self.value = initValue
+        self.value = initValue if initValue != None else 0
 
     def next(self):
         if self.values == None:
