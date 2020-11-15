@@ -9,8 +9,7 @@ class LCDMenuItem:
         self.value = 0
         self.values = values
         self.callback = callback
-        if initValue != None:
-            self.value = initValue if values == None else values.index(initValue)
+        self.value = initValue
 
     def next(self):
         if self.values == None:
