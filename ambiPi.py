@@ -3,7 +3,14 @@ from picamera import PiCamera
 from picamera.array import PiRGBArray, PiRGBAnalysis
 from picamera.color import Color
 import time
-from rpi_ws281x import *
+from signal import pause
+
+from RPLCD.gpio import CharLCD
+from RPi import GPIO
+from gpiozero import Button
+from LCDMenu import LCDMenu
+
+from rpi_ws281x import Adafruit_NeoPixel, Color
 
 # LED strip configuration:
 LED_COUNT      = 160      # Number of LED pixels.
@@ -103,9 +110,26 @@ class FrameProcessor(PiRGBAnalysis):
         self.counts +=1
 
 
+
 with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
     strip = Adafruit_NeoPixel(LED_COUNT, LED_PIN, LED_FREQ_HZ, LED_DMA, LED_INVERT, LED_BRIGHTNESS, LED_CHANNEL)
     strip.begin()
+
+    lcd = CharLCD(pin_rs=22, pin_rw=None, pin_e=27, pins_data=[6,13,19,26], numbering_mode=GPIO.BCM, cols=16, rows=2)
+
+    up = Button(17)
+    down = Button(16)
+    left = Button(20)
+    right = Button(21)
+
+    def changeBrightness(value):
+        strip.setBrightness(int(value))
+
+    menu = LCDMenu(lcd, up, down, left, right)
+    menu.addItem("brght", "Brightness", range(0,255), onChange=changeBrightness)
+    menu.addItem("clr", "Colors", ("Red", "Green", "Blue", "Black", "White", "Grey", "Yellow", "Pink"))
+    menu.addItem("ne", "First non exist", ("First", "Second", "Third", "Fourth"))
+    menu.addItem("ne", "First non exist", ("First", "Second", "Third", "Fourth"))
+
     camera.start_recording(FrameProcessor(camera, PROC_RES, strip), format='rgb', resize=PROC_RES)
-    camera.wait_recording(1200)
-    camera.stop_recording()
+    pause()
