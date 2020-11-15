@@ -1,6 +1,7 @@
 from RPLCD.gpio import CharLCD
 from RPi import GPIO
 from gpiozero import Button
+from time import sleep
 
 class LCDMenuItem:
     def __init__(self, text: str, values: tuple=None, callback=None):
