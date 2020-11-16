@@ -7,7 +7,7 @@ class LCDMenuItem:
     def __init__(self, text: str, values: tuple=None, initValue=None, callback=None):
         self.text = text
         self.values = values
-        self.callback = callback
+        self.callbackFnc = callback
         self.value = initValue if initValue != None else 0
 
     def next(self):
@@ -27,6 +27,14 @@ class LCDMenuItem:
         if self.values == None:
             return self.value
         return self.values[self.value]
+
+    def callback(self, val):
+        if self.callbackFnc == None:
+            return
+        if type(self.callbackFnc) is tuple:
+            self.callbackFnc[0](val, *(self.callbackFnc[1]))
+        else:
+            self.callbackFnc(val)
 
 class LCDMenu:
     def __init__(self, lcd: CharLCD, btnUp: Button, btnDown: Button, btnLeft: Button, btnRight: Button):
@@ -69,7 +77,7 @@ class LCDMenu:
         item = self._items[self._itemKeys[self._selected]]
         val = item.prev()
         self.lcd.write_string(f'{val}')
-        if withCallback and item.callback != None:
+        if withCallback:
             item.callback(val)
 
     def _onHoldLeft(self):
@@ -85,7 +93,7 @@ class LCDMenu:
         item = self._items[self._itemKeys[self._selected]]
         val = item.next()
         self.lcd.write_string(f'{val}')
-        if withCallback and item.callback != None:
+        if withCallback:
             item.callback(val)
 
     def _onHoldRight(self):
@@ -102,7 +110,7 @@ class LCDMenu:
         self.lcd.cursor_pos = (line,0)
 
     
-    def addItem(self, key, name, values: tuple=None, initValue=None, onChange=None):
+    def addItem(self, key, name, values: tuple=None, initValue=None, onChange: tuple=None):
         self._items[key] = LCDMenuItem(text=name, values=values, initValue=initValue, callback=onChange)
         self._itemKeys.append(key)
         if self._selected == None:
