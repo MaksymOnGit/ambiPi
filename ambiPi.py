@@ -224,9 +224,9 @@ with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
     db.initSetting("rs", 65)
     db.initSetting("bs", 25)
     db.initSetting("ls", 129)
-    db.initSetting("redlvl", 100)
-    db.initSetting("greenlvl", 100)
-    db.initSetting("bluelvl", 100)
+    db.initSetting("redlvl", 60)
+    db.initSetting("greenlvl", 60)
+    db.initSetting("bluelvl", 60)
     db.initSetting("gamma", 1)
 
 
