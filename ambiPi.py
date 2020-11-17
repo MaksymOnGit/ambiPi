@@ -146,7 +146,7 @@ def changeLEDResolution(value, key, db, frameProc: FrameProcessor):
         frameProc.ledHeight = value
     db.setSetting(key, int(value))
 
-def changeLEDDirection(value, key, db):
+def changeLEDDirection(value, key, db, frameProc: FrameProcessor):
     db.setSetting(key, int(value))
 
 def changeLEDPositioning(value, key, db, frameProc: FrameProcessor, strip: Adafruit_NeoPixel):
@@ -155,7 +155,7 @@ def changeLEDPositioning(value, key, db, frameProc: FrameProcessor, strip: Adafr
     elif key == "rs":
         frameProc.rightStart = value
     elif key == "bs":
-        frameProc.vottomStart = value
+        frameProc.bottomStart = value
     elif key == "ls":
         frameProc.leftStart = value
     for i in range(0, LED_COUNT):
