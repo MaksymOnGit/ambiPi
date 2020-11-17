@@ -6,12 +6,15 @@ class AmbiPiDB:
         self.path = os.path.join(sys.path[0], "ambiPi.db")
         self.createDatabase()
 
-    def getSettings(self, key: str):
+    def getSetting(self, key: str):
         result = self._executeQuery("SELECT value FROM settings WHERE key = ?", (key,)).fetchone()
         return result[0] if result != None else None
 
-    def setSettings(self, key: str, value: int):
+    def setSetting(self, key: str, value: int):
         self._executeQuery("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)", (key, value))
+
+    def initSetting(self, key: str, value: int):
+        self._executeQuery("INSERT INTO settings (key, value) SELECT ?, ? WHERE NOT EXISTS(SELECT 1 FROM settings WHERE key = ?)", (key, value, key))
 
     def createDatabase(self):
         self._executeQuery('''CREATE TABLE IF NOT EXISTS settings (
