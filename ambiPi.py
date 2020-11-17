@@ -6,7 +6,6 @@ import time
 from signal import pause
 
 from RPLCD.gpio import CharLCD
-from RPi import GPIO
 from gpiozero import Button
 from LCDMenu import LCDMenu
 
@@ -165,7 +164,7 @@ def changeLEDPositioning(value, key, db, frameProc: FrameProcessor, strip: Adafr
 with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
 
 
-    lcd = CharLCD(pin_rs=22, pin_rw=None, pin_e=27, pins_data=[6,13,19,26], numbering_mode=GPIO.BCM, cols=16, rows=2)
+    lcd = CharLCD(pin_rs=22, pin_rw=None, pin_e=27, pins_data=[6,13,19,26], numbering_mode=11, cols=16, rows=2)
 
     up = Button(17)
     down = Button(16)
