@@ -4,6 +4,7 @@ from picamera.array import PiRGBArray, PiRGBAnalysis
 from picamera.color import Color
 import time
 from signal import pause
+from threading import Thread
 
 from RPLCD.gpio import CharLCD
 from gpiozero import Button
@@ -25,7 +26,7 @@ LED_CHANNEL    = 0       # set to '1' for GPIOs 13, 19, 41, 45 or 53
 
 INPUT_RES = (1920, 1088)
 PROC_RES = (64, 48)#(640,360)
-DEBUG = True
+DEBUG = False
 
 gamma8: tuple = (
     0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0,
@@ -77,10 +78,10 @@ class FrameProcessor(PiRGBAnalysis):
         print("\033[?25l")
 
         self.counts = 0
+        self.framerate = 0
         self.lastreport = time.time()
 
     def analyze(self, data):
-
         for i in range(1, self.ledW):   #TOP
             x = round(i * self.blockW)
             y = 0
@@ -89,7 +90,6 @@ class FrameProcessor(PiRGBAnalysis):
             b=int(data[y, x, 2])
             self.printLED(0, i, r, g, b)
             self.strip.setPixelColorRGB(self.topStart + self.ledW - i, *self.processColor(r,g,b))
-        self.strip.show()
 
         for i in range(1, self.ledH):   #RIGHT
             x = self.procW-1
@@ -99,7 +99,6 @@ class FrameProcessor(PiRGBAnalysis):
             b=int(data[y, x, 2])
             self.printLED(i, self.ledW-1, r, g, b)
             self.strip.setPixelColorRGB(self.rightStart + self.ledH - i, *self.processColor(r,g,b))
-        self.strip.show()
 
         for i in range(self.ledW-2, -1, -1):    #BOTTOM
             x = round(i * self.blockW)
@@ -109,7 +108,6 @@ class FrameProcessor(PiRGBAnalysis):
             b=int(data[y, x, 2])
             self.printLED(self.ledH-1, i, r, g, b)
             self.strip.setPixelColorRGB(self.bottomStart + i, *self.processColor(r,g,b))
-        self.strip.show()
 
         for i in range(self.ledH-1, -1, -1):    #LEFT
             x = 0
@@ -119,9 +117,10 @@ class FrameProcessor(PiRGBAnalysis):
             b=int(data[y, x, 2])
             self.printLED(i, 0, r, g, b)
             self.strip.setPixelColorRGB(self.leftStart + i, *self.processColor(r,g,b))
+
         self.strip.show()
-        if DEBUG:
-            self.report()
+
+        self.report()
 
     def processColor(self, r,g,b):
         if(self.gamma):
@@ -141,9 +140,14 @@ class FrameProcessor(PiRGBAnalysis):
     def report(self):
         if (time.time()-self.lastreport)>1.0:
             self.lastreport = time.time()
-            self.printAt(23, 0, 255, 255, 255, self.counts)
+            self.framerate = self.counts
+            if DEBUG:
+                self.printAt(23, 0, 255, 255, 255, self.counts)
             self.counts = 0
         self.counts +=1
+    
+    def getFramerate(self):
+        return self.framerate
     
     @property
     def ledWidth(self):
@@ -263,6 +267,7 @@ with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
     menu.addItem("bluelvl", "Blue strength",   range(0,101), onChange=(changeLEDColorStrength, ("bluelvl", db, frameProc)), initValue=db.getSetting("bluelvl"))
 
     menu.addItem("gamma", "Gamma correction",   ("Off", "On"), onChange=(switchGammaCorrection, ("gamma", db, frameProc)), initValue=db.getSetting("gamma"))
+    menu.addMonitorItem("fps", "Framerate", sampleFrom=(frameProc.getFramerate, 0.5))
 
     camera.start_recording(frameProc, format='rgb', resize=PROC_RES)
     pause()
