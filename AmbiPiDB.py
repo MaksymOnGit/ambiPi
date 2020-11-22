@@ -19,6 +19,10 @@ class AmbiPiDB:
     def saveStatistics(self, fps, temp):
         self._executeQuery("INSERT INTO statistics (fps, cpuTemp) VALUES (?, ?)", (fps, temp))
 
+    def getStatistics(self):
+        result = self._executeQuery("SELECT fps, round(cpuTemp) FROM statistics")
+        return result.fetchall()
+
     def createDatabase(self):
         self._executeQuery('''CREATE TABLE IF NOT EXISTS settings (
             key VARCHAR PRIMARY KEY,
