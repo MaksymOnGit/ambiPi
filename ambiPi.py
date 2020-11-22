@@ -11,6 +11,7 @@ from gpiozero import Button, CPUTemperature
 from LCDMenu import LCDMenu
 
 from AmbiPiDB import AmbiPiDB
+from AmbiPiWeb import AmbiPiWeb
 
 from rpi_ws281x import Adafruit_NeoPixel
 
@@ -213,9 +214,16 @@ def logStatistics(fp: FrameProcessor, db: AmbiPiDB):
     while(True):
         db.saveStatistics(fp.framerate, cpu.temperature)
         time.sleep(1)
+
+def liveStatistics(fp: FrameProcessor):
+    cpu = CPUTemperature()
+    return (fp.framerate, int(cpu.temperature))
     
-def webServer(value, key, db: AmbiPiDB, framProc: FrameProcessor):
-    frameProc.gamma = True if value == "On" else False
+def webServer(value, key, db: AmbiPiDB, web: AmbiPiWeb):
+    if value == "On":
+        web.startServer()
+    else:
+        web.stopServer()
     db.setSetting(key, int(1 if value == "On" else 0))
 
 with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
@@ -279,9 +287,17 @@ with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
 
     menu.addItem("gamma", "Gamma correction",   ("Off", "On"), onChange=(switchGammaCorrection, ("gamma", db, frameProc)), initValue=db.getSetting("gamma"))
     menu.addMonitorItem("fps", "Framerate", sampleFrom=(frameProc.getFramerate, 0.5))
-    menu.addItem("web", "Web server",   ("Off", "On"), onChange=(switchGammaCorrection, ("web", db, frameProc)), initValue=db.getSetting("gamma"))
+    
 
     camera.start_recording(frameProc, format='rgb', resize=PROC_RES)
 
-    Thread(target=logStatistics, args=(frameProc, db)).start()
+    Thread(daemon=True, target=logStatistics, args=(frameProc, db)).start()
+
+    web = AmbiPiWeb(80)
+    web.addApi("/api/fpstemp", db.getStatistics)
+    web.addApi("/api/fpstemplive", (liveStatistics, (frameProc,)))
+    if db.getSetting("web") == 1:
+        web.startServer()
+    menu.addItem("web", "Web server",   ("Off", "On"), onChange=(webServer, ("web", db, web)), initValue=db.getSetting("web"))
+
     pause()
