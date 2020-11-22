@@ -97,7 +97,7 @@ class LCDMenu:
                     self._clearLine(1)
                     self.lcd.write_string(f'{self._selectedItem.get()}')
                     sleep(self._selectedItem.sleep)
-            t = Thread(target=task)
+            t = Thread(daemon=True, target=task)
             t.start()
 
         
