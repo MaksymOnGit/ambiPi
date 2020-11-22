@@ -7,7 +7,7 @@ from signal import pause
 from threading import Thread
 
 from RPLCD.gpio import CharLCD
-from gpiozero import Button
+from gpiozero import Button, CPUTemperature
 from LCDMenu import LCDMenu
 
 from AmbiPiDB import AmbiPiDB
@@ -168,21 +168,21 @@ class FrameProcessor(PiRGBAnalysis):
         self.blockH = self.procH / self.ledH
 
 
-def changeBrightness(value, db, strip):
+def changeBrightness(value, db: AmbiPiDB, strip):
     db.setSetting("brght", int(value))
     strip.setBrightness(int(value))
 
-def changeLEDResolution(value, key, db, frameProc: FrameProcessor):
+def changeLEDResolution(value, key, db: AmbiPiDB, frameProc: FrameProcessor):
     if key == "ledW":
         frameProc.ledWidth = value
     elif key == "ledH":
         frameProc.ledHeight = value
     db.setSetting(key, int(value))
 
-def changeLEDDirection(value, key, db, frameProc: FrameProcessor):
+def changeLEDDirection(value, key, db: AmbiPiDB, frameProc: FrameProcessor):
     db.setSetting(key, int(value))
 
-def changeLEDPositioning(value, key, db, frameProc: FrameProcessor, strip: Adafruit_NeoPixel):
+def changeLEDPositioning(value, key, db: AmbiPiDB, frameProc: FrameProcessor, strip: Adafruit_NeoPixel):
     if key == "ts":
         frameProc.topStart = value
     elif key == "rs":
@@ -195,7 +195,7 @@ def changeLEDPositioning(value, key, db, frameProc: FrameProcessor, strip: Adafr
         strip.setPixelColorRGB(i,0,0,0)
     db.setSetting(key, int(value))
 
-def changeLEDColorStrength(value, key, db, framProc: FrameProcessor):
+def changeLEDColorStrength(value, key, db: AmbiPiDB, framProc: FrameProcessor):
     if key == "redlvl":
         frameProc.redLvl = value/100
     elif key == "greenlvl":
@@ -204,7 +204,17 @@ def changeLEDColorStrength(value, key, db, framProc: FrameProcessor):
         frameProc.blueLvl = value/100
     db.setSetting(key, int(value))
 
-def switchGammaCorrection(value, key, db, framProc: FrameProcessor):
+def switchGammaCorrection(value, key, db: AmbiPiDB, framProc: FrameProcessor):
+    frameProc.gamma = True if value == "On" else False
+    db.setSetting(key, int(1 if value == "On" else 0))
+
+def logStatistics(fp: FrameProcessor, db: AmbiPiDB):
+    cpu = CPUTemperature()
+    while(True):
+        db.saveStatistics(fp.framerate, cpu.temperature)
+        time.sleep(1)
+    
+def webServer(value, key, db: AmbiPiDB, framProc: FrameProcessor):
     frameProc.gamma = True if value == "On" else False
     db.setSetting(key, int(1 if value == "On" else 0))
 
@@ -232,6 +242,7 @@ with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
     db.initSetting("greenlvl", 60)
     db.initSetting("bluelvl", 60)
     db.initSetting("gamma", 1)
+    db.initSetting("web", 0)
 
 
     brght = db.getSetting("brght")
@@ -268,6 +279,9 @@ with PiCamera(resolution=INPUT_RES, framerate=30) as camera:
 
     menu.addItem("gamma", "Gamma correction",   ("Off", "On"), onChange=(switchGammaCorrection, ("gamma", db, frameProc)), initValue=db.getSetting("gamma"))
     menu.addMonitorItem("fps", "Framerate", sampleFrom=(frameProc.getFramerate, 0.5))
+    menu.addItem("web", "Web server",   ("Off", "On"), onChange=(switchGammaCorrection, ("web", db, frameProc)), initValue=db.getSetting("gamma"))
 
     camera.start_recording(frameProc, format='rgb', resize=PROC_RES)
+
+    Thread(target=logStatistics, args=(frameProc, db)).start()
     pause()

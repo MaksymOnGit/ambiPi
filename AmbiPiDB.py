@@ -16,10 +16,24 @@ class AmbiPiDB:
     def initSetting(self, key: str, value: int):
         self._executeQuery("INSERT INTO settings (key, value) SELECT ?, ? WHERE NOT EXISTS(SELECT 1 FROM settings WHERE key = ?)", (key, value, key))
 
+    def saveStatistics(self, fps, temp):
+        self._executeQuery("INSERT INTO statistics (fps, cpuTemp) VALUES (?, ?)", (fps, temp))
+
     def createDatabase(self):
         self._executeQuery('''CREATE TABLE IF NOT EXISTS settings (
             key VARCHAR PRIMARY KEY,
             value INTEGER NULL)''')
+
+        self._executeQuery('''CREATE TABLE IF NOT EXISTS statistics (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            fps INTEGER NULL,
+            cpuTemp INTEGER NULL);''')
+
+        self._executeQuery('''
+            CREATE TRIGGER IF NOT EXISTS delete_tail AFTER INSERT ON statistics
+            BEGIN
+                DELETE FROM statistics WHERE id%100=NEW.id%100 AND id!=NEW.id;
+            END;''')
 
     def _executeQuery(self, sql: str, args: tuple = None):
         with sqlite3.connect(self.path) as con:
